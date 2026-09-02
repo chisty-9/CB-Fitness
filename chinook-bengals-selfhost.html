@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chinook Bengals — Off-Season Fitness</title>
+
+<!-- ============================================================
+     BROWSER TAB ICON (favicon)
+     Put a square image file named "favicon.png" in the SAME FOLDER
+     as this HTML file (any size works, 512x512 is safe). If the
+     file isn't there, browsers just show a default icon — nothing
+     breaks.
+============================================================= -->
+<link rel="icon" type="image/png" href="favicon.png">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Karla:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+
+<!-- ============================================================
+     FIREBASE (this is what makes data shared across everyone's
+     phones once you self-host this file — see the setup steps
+     you were given alongside this code). Leave these two lines
+     as they are, don't delete them.
+============================================================= -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+<style>
+  :root{
+    --pitch:#173620;
+    --pitch-2:#20492c;
+    --paper:#F3EEDF;
+    --paper-2:#EAE3CE;
+    --ink:#1A1A14;
+    --leather:#8C1D2B;
+    --leather-dark:#6b1621;
+    --willow:#C7A467;
+    --line:rgba(26,26,20,.18);
+    --muted:#6b6a5c;
+    --good:#2f6b3f;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Karla',sans-serif;
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+  }
+  h1,h2,h3,.score,.tabbtn,.stat-num{font-family:'Bebas Neue',sans-serif; letter-spacing:.02em;}
+  .header{
+    background:
+      repeating-linear-gradient(90deg, var(--pitch) 0px, var(--pitch) 24px, var(--pitch-2) 24px, var(--pitch-2) 48px);
+    color:var(--paper);
+    padding:16px 14px 0 14px;
+  }
+  .header-inner{
+    max-width:760px;margin:0 auto;
+    display:flex;justify-content:space-between;align-items:flex-end;
+    padding-bottom:14px;flex-wrap:wrap;gap:10px;
+  }
+  .brand{display:flex;align-items:center;gap:10px;}
+  .team-logo{height:42px;width:42px;object-fit:contain;border-radius:8px;background:rgba(255,255,255,.08);flex-shrink:0;}
+  .brand h1{font-size:clamp(1.5rem, 6vw, 2.1rem);margin:0;line-height:1;color:var(--paper);}
+  .brand p{margin:4px 0 0;font-size:.8rem;color:var(--willow);font-style:italic;}
+  .clock{text-align:right;}
+  .clock .score{font-size:clamp(1.9rem, 8vw, 2.6rem);line-height:1;color:var(--willow);}
+  .clock .lbl{font-size:.64rem;letter-spacing:.1em;text-transform:uppercase;color:var(--paper);opacity:.75;}
+  .tabs{
+    max-width:760px;margin:0 auto;display:flex;gap:2px;overflow-x:auto;
+    -webkit-overflow-scrolling:touch;scrollbar-width:none;
+  }
+  .tabs::-webkit-scrollbar{display:none;}
+  .tabbtn{
+    background:none;border:none;color:var(--paper);opacity:.6;font-size:1rem;
+    padding:11px 14px 13px;cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap;
+    min-height:44px;-webkit-tap-highlight-color:transparent;
+  }
+  .tabbtn.active{opacity:1;border-bottom-color:var(--leather);}
+  .tabbtn:hover{opacity:1;}
+  main{max-width:760px;margin:0 auto;padding:18px 14px 70px;}
+  @media (max-width:420px){
+    main{padding:14px 10px 70px;}
+    .card{padding:14px 12px;}
+  }
+  .card{
+    background:#fffdf7;border:1px solid var(--line);border-left:4px solid var(--pitch);
+    padding:16px 18px;margin-bottom:16px;
+  }
+  .card.red{border-left-color:var(--leather);}
+  .card.tan{border-left-color:var(--willow);}
+  .quote{
+    background:var(--paper-2);border-left:4px solid var(--leather);
+    padding:14px 16px;font-style:italic;margin-bottom:18px;font-size:1.02rem;
+  }
+  .quote b{font-style:normal;color:var(--leather);}
+  .row{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;}
+  .muted{color:var(--muted);font-size:.88rem;}
+  .btn{
+    font-family:'Karla',sans-serif;font-weight:700;border:2px solid var(--ink);background:var(--ink);color:var(--paper);
+    padding:11px 18px;cursor:pointer;font-size:.95rem;min-height:46px;-webkit-tap-highlight-color:transparent;
+  }
+  .btn:hover{background:var(--leather);border-color:var(--leather);}
+  .btn.outline{background:none;color:var(--ink);}
+  .btn.outline:hover{background:var(--ink);color:var(--paper);}
+  .btn.green{background:var(--good);border-color:var(--good);}
+  .btn.green:hover{opacity:.85;background:var(--good);}
+  .btn[disabled]{opacity:.4;cursor:not-allowed;}
+  label{display:block;font-size:.82rem;font-weight:700;margin:12px 0 4px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);}
+  select, input[type=text]{
+    width:100%;padding:12px 10px;font-family:'Karla',sans-serif;font-size:16px;border:1px solid var(--line);background:#fff;min-height:46px;
+  }
+  @media (max-width:600px){
+    .card .btn, .card .fileBtn{width:100%;text-align:center;}
+    .row > .btn, .row > .fileBtn{width:auto;}
+  }
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .day-title{font-size:1.5rem;margin:0 0 2px;}
+  .day-num{display:inline-block;background:var(--pitch);color:var(--paper);width:26px;height:26px;text-align:center;line-height:26px;border-radius:50%;font-family:'Bebas Neue';font-size:1rem;margin-right:8px;}
+  .ex{display:flex;gap:12px;align-items:flex-start;padding:12px 0;border-top:1px solid var(--line);}
+  .ex:first-of-type{border-top:none;}
+  .ex input[type=checkbox]{margin-top:2px;width:24px;height:24px;accent-color:var(--good);flex-shrink:0;}
+  .ex .exname{font-weight:700;}
+  .ex .exname.done{text-decoration:line-through;color:var(--muted);}
+  .exdetail{font-size:.86rem;color:var(--muted);}
+  .swap-tag{display:inline-block;background:var(--willow);color:var(--ink);font-size:.68rem;font-weight:700;text-transform:uppercase;padding:1px 6px;margin-left:6px;letter-spacing:.03em;}
+  .lookup{font-size:.78rem;margin-left:8px;white-space:nowrap;}
+  .progress{background:var(--line);height:8px;width:100%;margin:8px 0 2px;}
+  .progress > div{background:var(--good);height:100%;}
+  .badge{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;}
+  .badge.on{background:var(--good);}
+  .badge.off{background:#ccc;}
+  .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -18px;padding:0 18px;}
+  @media (max-width:420px){ .table-wrap{margin:0 -12px;padding:0 12px;} }
+  table{width:100%;border-collapse:collapse;font-size:.88rem;min-width:480px;}
+  th,td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--line);white-space:nowrap;}
+  th{font-family:'Bebas Neue';font-weight:400;letter-spacing:.04em;color:var(--muted);font-size:.85rem;}
+  .photo-row{display:flex;gap:10px;margin-top:10px;}
+  .photo-row img{width:70px;height:70px;object-fit:cover;border:1px solid var(--line);}
+  .fileBtn{display:inline-block;}
+  .fileBtn input{display:none;}
+  .onboard-wrap{max-width:460px;margin:40px auto;padding:0 18px;}
+  .link{background:none;border:none;color:var(--leather);text-decoration:underline;cursor:pointer;font-family:'Karla';font-size:.85rem;padding:0;}
+  a.link{display:inline-block;}
+  .disclaimer{font-size:.78rem;color:var(--muted);margin-top:20px;border-top:1px dashed var(--line);padding-top:10px;}
+  .who{font-size:.8rem;color:var(--willow);}
+  .streakbox{text-align:center;}
+  .streakbox .score{font-size:2.3rem;color:var(--leather);line-height:1;}
+  .empty{color:var(--muted);font-style:italic;padding:12px 0;}
+</style>
+</head>
+<body>
+<div id="app">Loading…</div>
+
+<script>
+/* ---------------- DATA ---------------- */
+const AGE_GROUPS = [
+  {id:'u20', label:'Cubs (Under 20)'},
+  {id:'20-26', label:'Prime (20–26)'},
+  {id:'27-34', label:'Vanguard (27–34)'},
+  {id:'35+', label:'Veteran Tigers (35+)'},
+];
+const ROLES = ['Bowler','Batsman','All-Rounder','Wicketkeeper'];
+const INJURIES = [
+  {id:'none', label:'No current niggles'},
+  {id:'shoulder', label:'Shoulder niggle'},
+  {id:'knee', label:'Knee niggle'},
+  {id:'both', label:'Shoulder & knee'},
+];
+
+const AGE_NOTE = {
+  'u20':'Cubs: nail the technique with lighter loads — strength comes easy at this age, movement quality is what pays off longest.',
+  '20-26':'Prime: your building block years. This is when you can push volume and intensity the hardest.',
+  '27-34':'Vanguard: keep the intensity, but control the tempo. Recovery matters more than it used to.',
+  '35+':'Veteran Tigers: sprint and jump work is automatically swapped for lower-impact versions below. Lighter loads, full range, no ego — protect the joints now so you can still play in ten years.',
+};
+
+
+function prescription(ageGroup){
+  switch(ageGroup){
+    case 'u20': return {sets:3, reps:'10–12', rest:'60s'};
+    case '20-26': return {sets:4, reps:'8–10', rest:'75s'};
+    case '27-34': return {sets:3, reps:'10', rest:'90s'};
+    case '35+': return {sets:3, reps:'12–15', rest:'90–120s'};
+    default: return {sets:3, reps:'10', rest:'75s'};
+  }
+}
+
+const KNEE_SWAPS = {
+  'Rear-foot elevated split squat':'Wall sit + banded terminal knee extension (pain-free only)',
+  'Bulgarian split squat':'Wall sit + banded terminal knee extension (pain-free only)',
+  'Box step-up':'Low step-up (shin-height), controlled tempo',
+  'Eccentric step-down':'Slow sit-to-stand from a chair, assisted if needed',
+  'Goblet squat':'Box squat to a bench, pain-free depth only',
+  'Goblet squat to depth':'Box squat to a bench, pain-free depth only',
+  'Walking lunges':'Static split-stance hold (no forward travel)',
+  'Step-back lunges':'Static split-stance hold (no forward travel)',
+  'Broad jumps':'Standing calf raises + marching on the spot',
+  'Single-leg box touch':'Single-leg balance hold, hand support allowed',
+  'Cossack squat':'Lateral step-and-reach, shallow range',
+  'Lateral lunge':'Lateral step-and-reach, shallow range',
+  'Side-to-side bounds':'Lateral shuffle, feet low, no jump',
+  'Lateral bounds':'Lateral shuffle, feet low, no jump',
+  'Deep squat hold mobility':'Supported squat hold, holding onto a post, partial range',
+  'Sprint starts from stance':'Fast-feet drill on the spot, no sprint load',
+  'Crease-to-crease sprints':'Fast-feet drill on the spot, no sprint load',
+  'Resisted band marches':'Marching in place, no band, controlled tempo',
+  'High-knee drills':'Marching in place, low impact, no knee drive',
+  'Nordic hamstring curl (assisted)':'Slow eccentric calf raise instead (pain-free range)',
+};
+const SHOULDER_SWAPS = {
+  'Band external rotation':'Isometric external rotation hold, pain-free angle only',
+  'Cable external rotation':'Isometric external rotation hold, pain-free angle only',
+  'Band internal rotation':'Isometric internal rotation hold, pain-free angle only',
+  'Cable internal rotation':'Isometric internal rotation hold, pain-free angle only',
+  'Prone Y-T-W raises':'Prone scapular squeeze (no arm lift)',
+  'Face pulls':'Prone scapular squeeze (no arm lift)',
+  'Push-up progression':'Wall push-up or incline push-up (hands elevated)',
+  'Incline bench press':'Wall push-up or incline push-up (hands elevated)',
+  'Medicine ball rotational throw':'Seated trunk rotation with a light ball, no throw',
+  'Cable rotational chop':'Seated trunk rotation with a light ball, no throw',
+  'Plank with shoulder taps':'Standard plank hold, no taps',
+  'Renegade rows':'Standard plank hold, no rows',
+  'Reaction ball catches':'Two-hand catches only, no one-arm reach',
+  'Wall toss & catch drills':'Two-hand catches only, close range, no reach',
+};
+const AGE_IMPACT_SWAPS = {
+  'Sprint repeats':'Bike sprints — 6 x 20s hard / 90s easy spin',
+  'Flying 20s':'Bike sprints — 6 x 20s hard / 90s easy spin',
+  'Bowling run-up shadow sprints':'Bowling run-up at 70% pace, no explosive drive',
+  'Run-up + jump (no ball)':'Bowling run-up at 70% pace, no jump',
+  'Skipping rope intervals':'Marching in place with arm swings, 6 x 30s',
+  '22-yard sprint repeats':'Bike sprints — 8 x 15s hard / 60s easy spin',
+  'Shuttle runs':'Brisk incline walk intervals, 6 x 1 min',
+  'Box-to-box shuttles':'Brisk incline walk intervals, 6 x 1 min',
+  'Sprint starts from stance':'Fast-feet drill on the spot, no sprint load',
+  'Crease-to-crease sprints':'Fast-feet drill on the spot, no sprint load',
+  'Broad jumps':'Step-ups with a pause at the top, no jump',
+  'Lateral bounds':'Lateral shuffle, feet low, no jump',
+  'Side-to-side bounds':'Lateral shuffle, feet low, no jump',
+  'Lateral shuffle drills':'Side-stepping at walking pace, 6 x 15m',
+  'Carioca drills':'Side-stepping at walking pace, 6 x 15m',
+};
+
+function V(list){ return {variants:list}; }
+
+const PLANS = {
+  'Bowler':[
+    {title:'Lower-Body Power & Landing Strength', focus:'Front & back foot landing strength', exercises:[
+      V([{name:'Rear-foot elevated split squat', tag:'knee', type:'strength'},{name:'Bulgarian split squat', tag:'knee', type:'strength'}]),
+      V([{name:'Single-leg Romanian deadlift', tag:'', type:'strength'},{name:'Kettlebell swing', tag:'', type:'strength'}]),
+      V([{name:'Box step-up', tag:'knee', type:'strength'},{name:'Walking lunges', tag:'knee', type:'strength'}]),
+      V([{name:'Eccentric step-down', tag:'knee', type:'strength'},{name:'Nordic hamstring curl (assisted)', tag:'knee', type:'strength'}]),
+      V([{name:'Standing calf raise', tag:'', type:'strength'}]),
+    ]},
+    {title:'Shoulder & Core Armour', focus:'Rotator cuff, scapular control, anti-rotation core', exercises:[
+      V([{name:'Band external rotation', tag:'shoulder', type:'strength'},{name:'Cable external rotation', tag:'shoulder', type:'strength'}]),
+      V([{name:'Band internal rotation', tag:'shoulder', type:'strength'},{name:'Cable internal rotation', tag:'shoulder', type:'strength'}]),
+      V([{name:'Prone Y-T-W raises', tag:'shoulder', type:'strength'},{name:'Face pulls', tag:'shoulder', type:'strength'}]),
+      V([{name:'Pallof press', tag:'', type:'strength'},{name:'Suitcase carry', tag:'', type:'strength'}]),
+      V([{name:'Dead bug', tag:'', type:'strength'},{name:'Bird dog', tag:'', type:'strength'}]),
+    ]},
+    {title:'Run-Up Speed & Conditioning', focus:'Sprint mechanics, repeated effort capacity', exercises:[
+      V([{name:'Sprint repeats', tag:'', impact:true, type:'fixed', detail:'6 x 20m at ~90% effort, walk-back recovery'},{name:'Flying 20s', tag:'', impact:true, type:'fixed', detail:'4 x 20m build-up into a 20m sprint'}]),
+      V([{name:'Resisted band marches', tag:'knee', type:'fixed', detail:'3 x 20m'},{name:'High-knee drills', tag:'knee', type:'fixed', detail:'3 x 20m'}]),
+      V([{name:'Bowling run-up shadow sprints', tag:'', impact:true, type:'fixed', detail:'6 x full run-up, no ball'},{name:'Run-up + jump (no ball)', tag:'', impact:true, type:'fixed', detail:'6 x full approach into a jump'}]),
+      V([{name:'Skipping rope intervals', tag:'', impact:true, type:'fixed', detail:'6 x 30s on / 30s off'},{name:'Battle ropes', tag:'', type:'fixed', detail:'6 x 30s on / 30s off'}]),
+      V([{name:'Plank series', tag:'', type:'fixed', detail:'3 x 30–45s, front + side'},{name:'Side plank series', tag:'', type:'fixed', detail:'3 x 30–45s each side'}]),
+    ]},
+    {title:'Mobility & Prehab', focus:'Thoracic rotation, hip mobility, injury-proofing', exercises:[
+      V([{name:'Thoracic rotation stretch', tag:'', type:'fixed', detail:'2 x 8 each side'}]),
+      V([{name:'Hip flexor (couch) stretch', tag:'', type:'fixed', detail:'2 x 45s each side'}]),
+      V([{name:'Sleeper stretch', tag:'', type:'fixed', detail:'2 x 30s each side'}]),
+      V([{name:'90/90 hip switches', tag:'', type:'fixed', detail:'2 x 10 each side'}]),
+      V([{name:'Foam rolling', tag:'', type:'fixed', detail:'5–8 min, full body'}]),
+    ]},
+  ],
+  'Batsman':[
+    {title:'Lower-Body Power', focus:'Hip drive for shot power & running', exercises:[
+      V([{name:'Goblet squat', tag:'knee', type:'strength'},{name:'Bulgarian split squat', tag:'knee', type:'strength'}]),
+      V([{name:'Walking lunges', tag:'knee', type:'strength'},{name:'Step-back lunges', tag:'knee', type:'strength'}]),
+      V([{name:'Broad jumps', tag:'knee', impact:true, type:'strength'},{name:'Lateral bounds', tag:'knee', impact:true, type:'strength'}]),
+      V([{name:'Single-leg box touch', tag:'knee', type:'strength'},{name:'Single-leg RDL reach', tag:'', type:'strength'}]),
+      V([{name:'Calf raises', tag:'', type:'strength'}]),
+    ]},
+    {title:'Rotational Power & Grip', focus:'Bat-swing power, forearm & grip strength', exercises:[
+      V([{name:'Medicine ball rotational throw', tag:'shoulder', type:'strength'},{name:'Cable rotational chop', tag:'shoulder', type:'strength'}]),
+      V([{name:'Cable woodchop', tag:'', type:'strength'},{name:'Landmine rotation', tag:'', type:'strength'}]),
+      V([{name:"Farmer's carry", tag:'', type:'strength'},{name:'Suitcase carry', tag:'', type:'strength'}]),
+      V([{name:'Wrist curls & reverse curls', tag:'', type:'strength'}]),
+      V([{name:'Plank with shoulder taps', tag:'shoulder', type:'strength'},{name:'Renegade rows', tag:'shoulder', type:'strength'}]),
+    ]},
+    {title:'Running Between Wickets & Agility', focus:'Sprint speed, change of direction', exercises:[
+      V([{name:'22-yard sprint repeats', tag:'', impact:true, type:'fixed', detail:'8 x 22 yards, full recovery'},{name:'Flying 20s', tag:'', impact:true, type:'fixed', detail:'4 x 20m build-up into a sprint'}]),
+      V([{name:'Agility ladder drills', tag:'', type:'fixed', detail:'5 patterns x 2 reps'},{name:'Cone T-drill', tag:'', type:'fixed', detail:'6 reps'}]),
+      V([{name:'Shuttle runs', tag:'', impact:true, type:'fixed', detail:'6 x 40m shuttle'},{name:'Box-to-box shuttles', tag:'', impact:true, type:'fixed', detail:'5 x 40m shuttle'}]),
+      V([{name:'Reaction ball drills', tag:'', type:'fixed', detail:'3 x 2 min'}]),
+      V([{name:'Sprint starts from stance', tag:'knee', impact:true, type:'fixed', detail:'6 x 10m'},{name:'Crease-to-crease sprints', tag:'knee', impact:true, type:'fixed', detail:'6 x 20m'}]),
+    ]},
+    {title:'Mobility & Recovery', focus:'Hip, hamstring & ankle mobility', exercises:[
+      V([{name:'Hip 90/90 mobility', tag:'', type:'fixed', detail:'2 x 10 each side'}]),
+      V([{name:'Thoracic rotation stretch', tag:'', type:'fixed', detail:'2 x 8 each side'}]),
+      V([{name:'Hamstring flossing', tag:'', type:'fixed', detail:'2 x 10 each leg'}]),
+      V([{name:'Ankle mobility drills', tag:'', type:'fixed', detail:'2 x 10 each side'}]),
+      V([{name:'Foam rolling', tag:'', type:'fixed', detail:'5–8 min, full body'}]),
+    ]},
+  ],
+  'All-Rounder':[
+    {title:'Total-Body Strength Foundation', focus:'Squat, hinge, push, pull, core base', exercises:[
+      V([{name:'Goblet squat', tag:'knee', type:'strength'},{name:'Bulgarian split squat', tag:'knee', type:'strength'}]),
+      V([{name:'Romanian deadlift', tag:'', type:'strength'},{name:'Kettlebell swing', tag:'', type:'strength'}]),
+      V([{name:'Push-up progression', tag:'shoulder', type:'strength'},{name:'Incline bench press', tag:'shoulder', type:'strength'}]),
+      V([{name:'Inverted row / band row', tag:'', type:'strength'},{name:'Lat pulldown', tag:'', type:'strength'}]),
+      V([{name:'Pallof press', tag:'', type:'strength'},{name:'Suitcase carry', tag:'', type:'strength'}]),
+    ]},
+    {title:'Bowling Armour (Shoulder & Landing)', focus:'Rotator cuff + landing strength', exercises:[
+      V([{name:'Band external rotation', tag:'shoulder', type:'strength'},{name:'Cable external rotation', tag:'shoulder', type:'strength'}]),
+      V([{name:'Band internal rotation', tag:'shoulder', type:'strength'},{name:'Cable internal rotation', tag:'shoulder', type:'strength'}]),
+      V([{name:'Rear-foot elevated split squat', tag:'knee', type:'strength'},{name:'Box step-up', tag:'knee', type:'strength'}]),
+      V([{name:'Prone Y-T-W raises', tag:'shoulder', type:'strength'},{name:'Face pulls', tag:'shoulder', type:'strength'}]),
+      V([{name:'Dead bug', tag:'', type:'strength'},{name:'Bird dog', tag:'', type:'strength'}]),
+    ]},
+    {title:'Batting Power & Running Speed', focus:'Rotational power, sprint speed', exercises:[
+      V([{name:'Medicine ball rotational throw', tag:'shoulder', type:'strength'},{name:'Cable rotational chop', tag:'shoulder', type:'strength'}]),
+      V([{name:'22-yard sprint repeats', tag:'', impact:true, type:'fixed', detail:'6 x 22 yards'},{name:'Flying 20s', tag:'', impact:true, type:'fixed', detail:'4 x 20m build-up into a sprint'}]),
+      V([{name:'Walking lunges', tag:'knee', type:'strength'},{name:'Step-back lunges', tag:'knee', type:'strength'}]),
+      V([{name:'Agility ladder drills', tag:'', type:'fixed', detail:'4 patterns x 2 reps'},{name:'Cone T-drill', tag:'', type:'fixed', detail:'5 reps'}]),
+    ]},
+    {title:'Mobility, Prehab & Conditioning', focus:'Recovery + aerobic base', exercises:[
+      V([{name:'Thoracic rotation stretch', tag:'', type:'fixed', detail:'2 x 8 each side'}]),
+      V([{name:'Hip flexor stretch', tag:'', type:'fixed', detail:'2 x 45s each side'}]),
+      V([{name:'Sleeper stretch', tag:'', type:'fixed', detail:'2 x 30s each side'}]),
+      V([{name:'Bike or swim (steady state)', tag:'', type:'fixed', detail:'20 min, easy–moderate pace'}]),
+      V([{name:'Foam rolling', tag:'', type:'fixed', detail:'5–8 min, full body'}]),
+    ]},
+  ],
+  'Wicketkeeper':[
+    {title:'Deep Squat Strength & Legs', focus:'Hold-position strength for keeping low', exercises:[
+      V([{name:'Goblet squat to depth', tag:'knee', type:'strength'},{name:'Cossack squat', tag:'knee', type:'strength'}]),
+      V([{name:'Cossack squat', tag:'knee', type:'strength'},{name:'Lateral lunge', tag:'knee', type:'strength'}]),
+      V([{name:'Box step-up', tag:'knee', type:'strength'},{name:'Step-back lunges', tag:'knee', type:'strength'}]),
+      V([{name:'Calf raises', tag:'', type:'strength'}]),
+    ]},
+    {title:'Hands, Reflexes & Shoulders', focus:'Reaction speed, grip, shoulder health', exercises:[
+      V([{name:'Reaction ball catches', tag:'shoulder', type:'fixed', detail:'4 x 2 min'},{name:'Wall toss & catch drills', tag:'shoulder', type:'fixed', detail:'4 x 2 min'}]),
+      V([{name:'Band external rotation', tag:'shoulder', type:'strength'},{name:'Cable external rotation', tag:'shoulder', type:'strength'}]),
+      V([{name:'Band internal rotation', tag:'shoulder', type:'strength'},{name:'Cable internal rotation', tag:'shoulder', type:'strength'}]),
+      V([{name:'Grip squeezes & finger extensions', tag:'', type:'strength'}]),
+      V([{name:'Prone Y-T-W raises', tag:'shoulder', type:'strength'},{name:'Face pulls', tag:'shoulder', type:'strength'}]),
+    ]},
+    {title:'Lateral Agility & Conditioning', focus:'Side-to-side speed & endurance', exercises:[
+      V([{name:'Lateral shuffle drills', tag:'', impact:true, type:'fixed', detail:'6 x 15m'},{name:'Carioca drills', tag:'', impact:true, type:'fixed', detail:'6 x 15m'}]),
+      V([{name:'Side-to-side bounds', tag:'knee', impact:true, type:'fixed', detail:'4 x 10 reps'},{name:'Lateral bounds', tag:'knee', impact:true, type:'fixed', detail:'4 x 10 reps'}]),
+      V([{name:'Shuttle runs', tag:'', impact:true, type:'fixed', detail:'6 x 40m'},{name:'Box-to-box shuttles', tag:'', impact:true, type:'fixed', detail:'5 x 40m'}]),
+      V([{name:'Plank series', tag:'', type:'fixed', detail:'3 x 30–45s'},{name:'Side plank series', tag:'', type:'fixed', detail:'3 x 30–45s each side'}]),
+    ]},
+    {title:'Mobility & Prehab', focus:'Hip & shoulder range for keeping', exercises:[
+      V([{name:'Deep squat hold mobility', tag:'knee', type:'fixed', detail:'3 x 30–45s'}]),
+      V([{name:'Hip 90/90 switches', tag:'', type:'fixed', detail:'2 x 10 each side'}]),
+      V([{name:'Sleeper stretch', tag:'', type:'fixed', detail:'2 x 30s each side'}]),
+      V([{name:'Foam rolling', tag:'', type:'fixed', detail:'5–8 min, full body'}]),
+    ]},
+  ],
+};
+
+const SCHEDULE = {1:0, 3:1, 5:2, 0:3}; // JS getDay(): Mon=1->day0, Wed=3->day1, Fri=5->day2, Sun=0->day3
+const DAY_NAMES = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+const QUOTES = {
+  general:[
+    "Winters make champions. Nobody sees this work — everybody sees the result.",
+    "The season doesn't start in April. It starts today.",
+    "Every rep this week is a run you won't give away next season.",
+  ],
+  'Bowler':[
+    "You could be the fastest bowler in the league next season. Keep working, champ.",
+    "Strong shoulders now, more yorkers later.",
+    "Legs win matches for bowlers. Build them this winter.",
+  ],
+  'Batsman':[
+    "You could be the best batter in the league next season. Keep working, champ.",
+    "Footwork today, boundaries tomorrow.",
+    "Hands are quick when the legs are strong — keep building.",
+  ],
+  'All-Rounder':[
+    "Two skills, one off-season. Stack the reps, champ.",
+    "All-rounders are made from October to April, not April to October.",
+  ],
+  'Wicketkeeper':[
+    "Soft hands start with strong legs. Keep grinding, champ.",
+    "Every squat this winter is a catch you won't drop next season.",
+  ],
+};
+
+/* ---------------- STORAGE ---------------- */
+/* ============================================================
+   FIREBASE SETUP — paste your own config here
+   Follow the "Create a Firebase project" steps you were given,
+   then copy the config object Firebase shows you and paste it
+   in place of the placeholder below. Every value is a short
+   string like "AIzaSy...".
+============================================================= */
+const firebaseConfig = {
+  apiKey: "AIzaSyCGpk8EDY4SNmEqqKRTVO_XXdC8dvnP-_A",
+  authDomain: "chinook-bengals.firebaseapp.com",
+  projectId: "chinook-bengals",
+  storageBucket: "chinook-bengals.firebasestorage.app",
+  messagingSenderId: "152691788680",
+  appId: "1:152691788680:web:211aa97d0072eda20f883d"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+/* ---------------- STORAGE ----------------
+   "shared" data (roster, check-ins, weekly checklists) lives in
+   Firestore so every player's phone sees the same data.
+   "personal" data is just which player YOU are on THIS phone —
+   that stays in the phone's own browser storage (localStorage),
+   no need to put it in the cloud.
+------------------------------------------- */
+const Store = {
+  async get(key, shared){
+    try{
+      if(!shared){ const v = localStorage.getItem(key); return v ? JSON.parse(v) : null; }
+      const doc = await db.collection('kv').doc(key).get();
+      return doc.exists ? JSON.parse(doc.data().value) : null;
+    } catch(e){ console.error('Store.get failed', key, e); return null; }
+  },
+  async set(key, value, shared){
+    try{
+      if(!shared){ localStorage.setItem(key, JSON.stringify(value)); return true; }
+      await db.collection('kv').doc(key).set({ value: JSON.stringify(value) });
+      return true;
+    } catch(e){ console.error('Store.set failed', key, e); return false; }
+  },
+  async listKeys(prefix, shared){
+    try{
+      if(!shared) return [];
+      const end = prefix + '\uf8ff';
+      const snap = await db.collection('kv')
+        .where(firebase.firestore.FieldPath.documentId(), '>=', prefix)
+        .where(firebase.firestore.FieldPath.documentId(), '<=', end)
+        .get();
+      return snap.docs.map(d => d.id);
+    } catch(e){ console.error('Store.listKeys failed', prefix, e); return []; }
+  }
+};
+
+/* ---------------- HELPERS ---------------- */
+function uid(){ return 'p' + Math.random().toString(36).slice(2,10); }
+function todayStr(d){ d = d || new Date(); return d.toISOString().slice(0,10); }
+function isoWeekKey(d){
+  d = d || new Date();
+  const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  const dayNum = (date.getUTCDay()+6)%7;
+  date.setUTCDate(date.getUTCDate()-dayNum+3);
+  const firstThursday = new Date(Date.UTC(date.getUTCFullYear(),0,4));
+  const week = 1+Math.round(((date-firstThursday)/86400000-3+((firstThursday.getUTCDay()+6)%7))/7);
+  return date.getUTCFullYear()+'-W'+String(week).padStart(2,'0');
+}
+function weekVariantIdx(){
+  const wk = isoWeekKey();
+  const num = parseInt(wk.split('W')[1], 10) || 0;
+  return num % 2;
+}
+function seededPick(arr, seed){
+  let h = 0; for(let i=0;i<seed.length;i++){ h = (h*31 + seed.charCodeAt(i)) >>> 0; }
+  return arr[h % arr.length];
+}
+function daysUntilNets(){
+  const now = new Date();
+  let target = new Date(now.getFullYear(), 3, 1); // April 1
+  if(now > target) target = new Date(now.getFullYear()+1, 3, 1);
+  return Math.ceil((target - now) / 86400000);
+}
+function resolveExercise(slot, injury, ageGroup, weekIdx){
+  const variant = slot.variants[weekIdx % slot.variants.length];
+  const hasShoulder = injury === 'shoulder' || injury === 'both';
+  const hasKnee = injury === 'knee' || injury === 'both';
+  if(variant.tag === 'knee' && hasKnee && KNEE_SWAPS[variant.name]){
+    return {name: variant.name, detail: KNEE_SWAPS[variant.name], swapped:'injury', type:'fixed'};
+  }
+  if(variant.tag === 'shoulder' && hasShoulder && SHOULDER_SWAPS[variant.name]){
+    return {name: variant.name, detail: SHOULDER_SWAPS[variant.name], swapped:'injury', type:'fixed'};
+  }
+  if(variant.impact && ageGroup === '35+' && AGE_IMPACT_SWAPS[variant.name]){
+    return {name: variant.name, detail: AGE_IMPACT_SWAPS[variant.name], swapped:'age', type:'fixed'};
+  }
+  return {name: variant.name, detail: variant.detail || '', swapped:false, type: variant.type};
+}
+function compressImage(file){
+  return new Promise((resolve, reject)=>{
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = new Image();
+      img.onload = () => {
+        const maxW = 480;
+        const scale = Math.min(1, maxW / img.width);
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.max(1, Math.round(img.width * scale));
+        canvas.height = Math.max(1, Math.round(img.height * scale));
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL('image/jpeg', 0.6));
+      };
+      img.onerror = reject;
+      img.src = e.target.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+/* ---------------- STATE ---------------- */
+const S = { me:null, roster:[], view:'dashboard', ready:false, weekCache:null, todayCheckin:null, adminSel:null, adminSelData:null };
+
+async function boot(){
+  S.roster = await Store.get('roster', true) || [];
+  const meRef = await Store.get('me', false);
+  if(meRef && S.roster.find(p=>p.id===meRef.playerId)){
+    S.me = S.roster.find(p=>p.id===meRef.playerId);
+  }
+  S.ready = true;
+  await refreshToday();
+  render();
+}
+
+async function refreshToday(){
+  if(!S.me) return;
+  S.todayCheckin = await Store.get(`checkin:${S.me.id}:${todayStr()}`, true);
+  S.weekCache = await Store.get(`weekdone:${S.me.id}:${isoWeekKey()}`, true) || {checked:[]};
+}
+
+/* ---------------- ACTIONS ---------------- */
+async function createPlayer(name, role, ageGroup, injury){
+  const p = { id: uid(), name: name.trim(), role, ageGroup, injury, isAdmin: S.roster.length === 0, joinedAt: todayStr() };
+  S.roster.push(p);
+  await Store.set('roster', S.roster, true);
+  await Store.set('me', {playerId:p.id}, false);
+  S.me = p;
+  await refreshToday();
+  render();
+}
+async function selectExisting(id){
+  const p = S.roster.find(r=>r.id===id);
+  if(!p) return;
+  await Store.set('me', {playerId:id}, false);
+  S.me = p;
+  await refreshToday();
+  render();
+}
+function switchPlayer(){ S.me = null; render(); }
+
+async function toggleAdmin(id){
+  if(!S.me || !S.me.isAdmin) return;
+  const p = S.roster.find(r=>r.id===id);
+  if(!p) return;
+  p.isAdmin = !p.isAdmin;
+  await Store.set('roster', S.roster, true);
+  render();
+}
+
+async function handleCheckIn(fileInput){
+  const file = fileInput.files[0];
+  if(!file) return;
+  const photo = await compressImage(file);
+  const rec = { playerId:S.me.id, date:todayStr(), inTime: new Date().toISOString(), inPhoto:photo, outTime:null, outPhoto:null };
+  await Store.set(`checkin:${S.me.id}:${todayStr()}`, rec, true);
+  S.todayCheckin = rec;
+  render();
+}
+async function handleCheckOut(fileInput){
+  const file = fileInput.files[0];
+  if(!file || !S.todayCheckin) return;
+  const photo = await compressImage(file);
+  S.todayCheckin.outTime = new Date().toISOString();
+  S.todayCheckin.outPhoto = photo;
+  await Store.set(`checkin:${S.me.id}:${todayStr()}`, S.todayCheckin, true);
+  render();
+}
+
+async function toggleExercise(dayIdx, exIdx){
+  const key = dayIdx + '-' + exIdx;
+  const set = new Set(S.weekCache.checked || []);
+  if(set.has(key)) set.delete(key); else set.add(key);
+  S.weekCache.checked = Array.from(set);
+  await Store.set(`weekdone:${S.me.id}:${isoWeekKey()}`, S.weekCache, true);
+  render();
+}
+
+async function computeStreak(playerId){
+  const keys = await Store.listKeys(`checkin:${playerId}:`, true);
+  const dates = new Set(keys.map(k=>k.split(':')[2]));
+  let streak = 0;
+  let cur = new Date();
+  while(true){
+    const ds = todayStr(cur);
+    if(dates.has(ds)){ streak++; cur.setDate(cur.getDate()-1); }
+    else break;
+  }
+  return streak;
+}
+async function weeklySessionCount(playerId){
+  const keys = await Store.listKeys(`checkin:${playerId}:`, true);
+  const cutoff = new Date(); cutoff.setDate(cutoff.getDate()-6);
+  return keys.filter(k=>{
+    const ds = k.split(':')[2];
+    return new Date(ds) >= new Date(todayStr(cutoff));
+  }).length;
+}
+
+async function openAdminPlayer(id){
+  S.adminSel = id;
+  const keys = await Store.listKeys(`checkin:${id}:`, true);
+  const dates = keys.map(k=>k.split(':')[2]).sort().reverse().slice(0,10);
+  const records = [];
+  for(const d of dates){
+    const r = await Store.get(`checkin:${id}:${d}`, true);
+    if(r) records.push(r);
+  }
+  S.adminSelData = records;
+  render();
+}
+
+/* ---------------- RENDER ---------------- */
+function esc(s){ const d=document.createElement('div'); d.textContent = s; return d.innerHTML; }
+function lookupUrl(name){ return 'https://www.youtube.com/results?search_query=' + encodeURIComponent(name + ' exercise tutorial'); }
+
+function render(){
+  const app = document.getElementById('app');
+  if(!S.ready){ app.innerHTML = '<p style="padding:40px;text-align:center;font-family:Karla;">Loading…</p>'; return; }
+  if(!S.me){ app.innerHTML = renderOnboarding(); attachOnboardHandlers(); return; }
+  app.innerHTML = renderShell();
+  attachShellHandlers();
+}
+
+function renderOnboarding(){
+  const roster = S.roster;
+  return `
+  <div class="header"><div class="header-inner">
+    <div class="brand">
+      <!-- ============================================================
+           TEAM LOGO
+           1. Save your logo image in the SAME FOLDER as this HTML file
+              (any name/format works: logo.png, logo.jpg, logo.svg...).
+           2. Change src="logo.png" below to your file's exact name.
+           3. No logo yet? Leave it as is -- if the file is missing the
+              image just quietly disappears (onerror hides it), so
+              nothing looks broken.
+      ============================================================= -->
+      <img src="logo.png" alt="Team logo" class="team-logo" onerror="this.style.display='none'">
+      <div><h1>Chinook Bengals</h1><p>Winter\'s where the season gets won.</p></div>
+    </div>
+  </div></div>
+  <div class="onboard-wrap">
+    ${roster.length ? `
+    <div class="card">
+      <h3 style="margin-top:0;">That's me</h3>
+      <select id="existingSel">
+        <option value="">Choose your name…</option>
+        ${roster.map(p=>`<option value="${p.id}">${esc(p.name)} — ${esc(p.role)}</option>`).join('')}
+      </select>
+      <div style="margin-top:10px;"><button class="btn" id="pickExisting">Continue</button></div>
+    </div>` : ''}
+    <div class="card tan">
+      <h3 style="margin-top:0;">New player</h3>
+      <label>Name</label>
+      <input type="text" id="npName" placeholder="Your name">
+      <label>Role</label>
+      <select id="npRole">${ROLES.map(r=>`<option value="${r}">${r}</option>`).join('')}</select>
+      <label>Age group</label>
+      <select id="npAge">${AGE_GROUPS.map(a=>`<option value="${a.id}">${a.label}</option>`).join('')}</select>
+      <label>Any niggles?</label>
+      <select id="npInjury">${INJURIES.map(i=>`<option value="${i.id}">${i.label}</option>`).join('')}</select>
+      <div style="margin-top:14px;"><button class="btn" id="createBtn">Join the squad</button></div>
+      ${roster.length===0 ? '<p class="muted" style="margin-top:10px;">First one in — you will be the squad admin.</p>' : ''}
+    </div>
+    <p class="disclaimer">Heads up: there's no password wall here. Anyone with this link can see the team roster and check-ins — good for a small trusted squad, not for anything sensitive. Training guidance here is general, not physiotherapy — if an injury is more than a niggle, see a physio.</p>
+  </div>`;
+}
+function attachOnboardHandlers(){
+  const pickBtn = document.getElementById('pickExisting');
+  if(pickBtn) pickBtn.onclick = () => {
+    const id = document.getElementById('existingSel').value;
+    if(id) selectExisting(id);
+  };
+  const createBtn = document.getElementById('createBtn');
+  if(createBtn) createBtn.onclick = () => {
+    const name = document.getElementById('npName').value.trim();
+    if(!name){ alert('Enter a name first.'); return; }
+    createPlayer(name, document.getElementById('npRole').value, document.getElementById('npAge').value, document.getElementById('npInjury').value);
+  };
+}
+
+function renderShell(){
+  const days = daysUntilNets();
+  const tabs = ['dashboard','plan','gym','team'];
+  if(S.me.isAdmin) tabs.push('admin');
+  const tabLabel = {dashboard:'Dashboard', plan:'My Plan', gym:'Gym Log', team:'Team', admin:'Admin'};
+  return `
+  <div class="header">
+    <div class="header-inner">
+      <div class="brand">
+      <!-- ============================================================
+           TEAM LOGO
+           1. Save your logo image in the SAME FOLDER as this HTML file
+              (any name/format works: logo.png, logo.jpg, logo.svg...).
+           2. Change src="logo.png" below to your file's exact name.
+           3. No logo yet? Leave it as is -- if the file is missing the
+              image just quietly disappears (onerror hides it), so
+              nothing looks broken.
+      ============================================================= -->
+      <img src="logo.png" alt="Team logo" class="team-logo" onerror="this.style.display='none'">
+      <div><h1>Chinook Bengals</h1><p>Winter\'s where the season gets won.</p></div>
+    </div>
+      <div class="clock"><div class="score">${days}</div><div class="lbl">Days to first net</div></div>
+    </div>
+    <div class="tabs">
+      ${tabs.map(t=>`<button class="tabbtn ${S.view===t?'active':''}" data-tab="${t}">${tabLabel[t]}</button>`).join('')}
+    </div>
+  </div>
+  <main>
+    <div class="row" style="margin-bottom:14px;">
+      <span class="who">${esc(S.me.name)} · ${esc(S.me.role)} · ${AGE_GROUPS.find(a=>a.id===S.me.ageGroup).label}${S.me.isAdmin ? ' · Admin' : ''}</span>
+      <button class="link" id="switchBtn">Not you? Switch player</button>
+    </div>
+    ${S.view==='dashboard' ? renderDashboard() : ''}
+    ${S.view==='plan' ? renderPlan() : ''}
+    ${S.view==='gym' ? renderGym() : ''}
+    ${S.view==='team' ? renderTeamLoading() : ''}
+    ${S.view==='admin' ? renderAdminLoading() : ''}
+  </main>`;
+}
+
+function renderDashboard(){
+  const dow = new Date().getDay();
+  const dayIdx = SCHEDULE[dow];
+  const weekIdx = weekVariantIdx();
+  const quotePool = (QUOTES[S.me.role]||[]).concat(QUOTES.general);
+  const quote = seededPick(quotePool, S.me.id + todayStr());
+  let sessionBlock;
+  if(dayIdx !== undefined){
+    const plan = PLANS[S.me.role][dayIdx];
+    const doneCount = (S.weekCache.checked||[]).filter(k=>k.startsWith(dayIdx+'-')).length;
+    sessionBlock = `
+    <div class="card">
+      <span class="muted">Today's session — Week ${weekIdx===0?'A':'B'}</span>
+      <h3 class="day-title"><span class="day-num">${dayIdx+1}</span>${esc(plan.title)}</h3>
+      <p class="muted" style="margin-top:0;">${esc(plan.focus)}</p>
+      <div class="row">
+        <span class="muted">${doneCount}/${plan.exercises.length} exercises checked off</span>
+        <button class="btn outline" data-goto="plan">Open checklist</button>
+      </div>
+    </div>`;
+  } else {
+    sessionBlock = `<div class="card tan"><span class="muted">Today</span><h3 class="day-title">Rest day</h3><p class="muted" style="margin:0;">Recovery, sleep, and skills work if you fancy it. Structured sessions are Mon / Wed / Fri / Sun.</p></div>`;
+  }
+  return `
+    <div class="quote">${esc(quote)}</div>
+    ${sessionBlock}
+    <div class="card red">
+      <div class="row">
+        <div>
+          <span class="muted">Gym check-in</span>
+          <h3 style="margin:2px 0;">${S.todayCheckin ? (S.todayCheckin.outTime ? 'Session logged ✔' : 'Checked in — log your exit when done') : 'Not checked in yet today'}</h3>
+        </div>
+        <button class="btn" data-goto="gym">Open Gym Log</button>
+      </div>
+    </div>
+    <div id="streakHolder" class="card streakbox"><div class="score">…</div><div class="muted">day streak</div></div>
+  `;
+}
+
+function renderPlan(){
+  const plan = PLANS[S.me.role];
+  const checked = new Set(S.weekCache.checked||[]);
+  const weekIdx = weekVariantIdx();
+  let total=0, done=0;
+  plan.forEach((d,di)=>d.exercises.forEach((e,ei)=>{ total++; if(checked.has(di+'-'+ei)) done++; }));
+  return `
+    <p class="muted">${AGE_NOTE[S.me.ageGroup]}</p>
+    <div class="card tan"><p class="muted" style="margin:0;">${esc(SQUAD_NOTE)}</p></div>
+    <p class="muted">This is <b>Week ${weekIdx===0?'A':'B'}</b> — exercises rotate fortnightly so it doesn't get stale. Don't recognise a move? Tap "Look it up" next to it for a quick video — or search the same name in Google Images for a GIF.</p>
+    <div class="progress"><div style="width:${total?Math.round(done/total*100):0}%"></div></div>
+    <p class="muted" style="margin-top:2px;">${done}/${total} exercises checked off this week</p>
+    ${plan.map((day, di)=>{
+      const scheduled = Object.entries(SCHEDULE).find(([dow,idx])=>idx===di);
+      const dayLabel = scheduled ? DAY_NAMES[scheduled[0]] : '';
+      return `
+      <div class="card">
+        <h3 class="day-title"><span class="day-num">${di+1}</span>${esc(day.title)}${dayLabel?` <span class="muted" style="font-family:Karla;font-size:.8rem;font-weight:400;">— ${dayLabel}</span>`:''}</h3>
+        <p class="muted" style="margin-top:0;">${esc(day.focus)}</p>
+        ${day.exercises.map((slot, ei)=>{
+          const r = resolveExercise(slot, S.me.injury, S.me.ageGroup, weekIdx);
+          const isChecked = checked.has(di+'-'+ei);
+          const pres = r.type==='strength' ? prescription(S.me.ageGroup) : null;
+          const tagLabel = r.swapped === 'injury' ? 'Joint-friendly swap' : (r.swapped === 'age' ? 'Low-impact swap' : '');
+          return `
+          <div class="ex">
+            <input type="checkbox" data-day="${di}" data-ex="${ei}" ${isChecked?'checked':''}>
+            <div style="flex:1;">
+              <span class="exname ${isChecked?'done':''}">${esc(r.name)}</span>${tagLabel?`<span class="swap-tag">${tagLabel}</span>`:''}
+              <a class="link lookup" target="_blank" rel="noopener" href="${lookupUrl(r.name)}">Look it up ▶</a>
+              <div class="exdetail">${pres ? `${pres.sets} x ${pres.reps} · rest ${pres.rest}` : esc(r.detail)}</div>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>`;
+    }).join('')}
+    <p class="disclaimer">General training guidance only, not physiotherapy. If pain persists beyond a niggle, get it looked at by a physio before pushing through.</p>
+  `;
+}
+
+function renderGym(){
+  const c = S.todayCheckin;
+  return `
+    <div class="card">
+      <h3 style="margin-top:0;">Today — ${todayStr()}</h3>
+      ${!c ? `
+        <p class="muted">Snap a photo when you walk in.</p>
+        <label class="fileBtn btn">Check in with photo<input type="file" accept="image/*" capture="environment" id="inFile"></label>
+      ` : `
+        <div class="photo-row">
+          <img src="${c.inPhoto}" alt="check-in photo">
+          ${c.outPhoto ? `<img src="${c.outPhoto}" alt="check-out photo">` : ''}
+        </div>
+        <p class="muted">In: ${new Date(c.inTime).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}${c.outTime ? ' · Out: '+new Date(c.outTime).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : ''}</p>
+        ${!c.outTime ? `<label class="fileBtn btn green">Check out with photo<input type="file" accept="image/*" capture="environment" id="outFile"></label>` : `<p class="muted">Session logged for today. Nice work.</p>`}
+      `}
+    </div>
+    <p class="disclaimer">Check-in photos are stored so your admin and teammates can see who's putting the work in. There's no lock on this data beyond this link, so keep it to gym selfies.</p>
+  `;
+}
+
+function renderTeamLoading(){
+  setTimeout(loadTeamTable, 0);
+  return `<div id="teamHolder" class="card"><p class="empty">Loading team…</p></div>`;
+}
+async function loadTeamTable(){
+  const rows = [];
+  for(const p of S.roster){
+    const streak = await computeStreak(p.id);
+    const weekly = await weeklySessionCount(p.id);
+    const todayRec = await Store.get(`checkin:${p.id}:${todayStr()}`, true);
+    rows.push({p, streak, weekly, today: !!todayRec});
+  }
+  rows.sort((a,b)=> b.weekly - a.weekly || b.streak - a.streak);
+  const holder = document.getElementById('teamHolder');
+  if(!holder) return;
+  holder.outerHTML = `
+    <div class="card">
+      <h3 style="margin-top:0;">Squad leaderboard — last 7 days</h3>
+      <div class="table-wrap"><table>
+        <tr><th>Player</th><th>Role</th><th>Sessions</th><th>Streak</th><th>Today</th></tr>
+        ${rows.map(r=>`
+          <tr>
+            <td>${esc(r.p.name)}${r.p.id===S.me.id?' (you)':''}</td>
+            <td>${esc(r.p.role)}</td>
+            <td>${r.weekly}</td>
+            <td>${r.streak}🔥</td>
+            <td><span class="badge ${r.today?'on':'off'}"></span>${r.today?'Checked in':'—'}</td>
+          </tr>`).join('')}
+      </table></div>
+    </div>
+    <p class="disclaimer">Visible to the whole squad — this app has no login wall, so treat it as a shared team space.</p>
+  `;
+}
+
+function renderAdminLoading(){
+  return `
+    <div class="card">
+      <h3 style="margin-top:0;">Squad roster</h3>
+      <div class="table-wrap"><table>
+        <tr><th>Player</th><th>Role / Age</th><th>Niggle</th><th>Admin</th><th></th></tr>
+        ${S.roster.map(p=>`
+          <tr>
+            <td>${esc(p.name)}</td>
+            <td>${esc(p.role)} · ${AGE_GROUPS.find(a=>a.id===p.ageGroup).label}</td>
+            <td>${INJURIES.find(i=>i.id===p.injury).label}</td>
+            <td>${p.isAdmin?'Yes':'No'}</td>
+            <td>
+              <button class="link" data-admintoggle="${p.id}">${p.isAdmin?'Remove admin':'Make admin'}</button>
+              &nbsp;·&nbsp;
+              <button class="link" data-adminview="${p.id}">View log</button>
+            </td>
+          </tr>`).join('')}
+      </table></div>
+    </div>
+    ${S.adminSel ? renderAdminDetail() : ''}
+  `;
+}
+function renderAdminDetail(){
+  const p = S.roster.find(r=>r.id===S.adminSel);
+  if(!p) return '';
+  const recs = S.adminSelData || [];
+  return `
+    <div class="card tan">
+      <h3 style="margin-top:0;">${esc(p.name)}'s recent gym log</h3>
+      ${recs.length===0 ? '<p class="empty">No check-ins logged yet.</p>' : recs.map(r=>`
+        <div style="margin-bottom:12px;">
+          <p class="muted" style="margin:0 0 4px;">${r.date} — in ${new Date(r.inTime).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}${r.outTime?', out '+new Date(r.outTime).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):''}</p>
+          <div class="photo-row"><img src="${r.inPhoto}">${r.outPhoto?`<img src="${r.outPhoto}">`:''}</div>
+        </div>`).join('')}
+    </div>
+  `;
+}
+
+function attachShellHandlers(){
+  document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{ S.view=b.dataset.tab; S.adminSel=null; render(); });
+  document.querySelectorAll('[data-goto]').forEach(b=>b.onclick=()=>{ S.view=b.dataset.goto; render(); });
+  const sw = document.getElementById('switchBtn'); if(sw) sw.onclick = switchPlayer;
+
+  if(S.view==='dashboard'){
+    computeStreak(S.me.id).then(n=>{
+      const el = document.getElementById('streakHolder');
+      if(el) el.innerHTML = `<div class="score">${n}🔥</div><div class="muted">day streak</div>`;
+    });
+  }
+  if(S.view==='plan'){
+    document.querySelectorAll('.ex input[type=checkbox]').forEach(cb=>{
+      cb.onchange = () => toggleExercise(cb.dataset.day, cb.dataset.ex);
+    });
+  }
+  if(S.view==='gym'){
+    const inF = document.getElementById('inFile'); if(inF) inF.onchange = () => handleCheckIn(inF);
+    const outF = document.getElementById('outFile'); if(outF) outF.onchange = () => handleCheckOut(outF);
+  }
+  if(S.view==='admin'){
+    document.querySelectorAll('[data-admintoggle]').forEach(b=>b.onclick=()=>toggleAdmin(b.dataset.admintoggle));
+    document.querySelectorAll('[data-adminview]').forEach(b=>b.onclick=()=>openAdminPlayer(b.dataset.adminview));
+  }
+}
+
+boot();
+</script>
+</body>
+</html>
