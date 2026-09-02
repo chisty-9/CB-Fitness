@@ -781,7 +781,6 @@ function renderPlan(){
   plan.forEach((d,di)=>d.exercises.forEach((e,ei)=>{ total++; if(checked.has(di+'-'+ei)) done++; }));
   return `
     <p class="muted">${AGE_NOTE[S.me.ageGroup]}</p>
-    <div class="card tan"><p class="muted" style="margin:0;">${esc(SQUAD_NOTE)}</p></div>
     <p class="muted">This is <b>Week ${weekIdx===0?'A':'B'}</b> — exercises rotate fortnightly so it doesn't get stale. Don't recognise a move? Tap "Look it up" next to it for a quick video — or search the same name in Google Images for a GIF.</p>
     <div class="progress"><div style="width:${total?Math.round(done/total*100):0}%"></div></div>
     <p class="muted" style="margin-top:2px;">${done}/${total} exercises checked off this week</p>
